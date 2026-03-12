@@ -54,6 +54,36 @@ python calendar_tool.py delete-event --event-id <UID>
 
 Event UIDs are returned by `get-events` and `create-event`.
 
+## Reminders
+
+**List reminders (open only by default):**
+```bash
+python calendar_tool.py get-reminders
+python calendar_tool.py get-reminders --list "Shopping"
+python calendar_tool.py get-reminders --include-completed
+```
+
+**Create a reminder:**
+```bash
+python calendar_tool.py create-reminder --title "Buy milk"
+python calendar_tool.py create-reminder --title "Call dentist" --due 2026-03-20 --priority high
+python calendar_tool.py create-reminder --title "Review PR" --due 2026-03-15T10:00 --list "Work"
+```
+
+**Complete a reminder:**
+```bash
+python calendar_tool.py complete-reminder --reminder-id <UID>
+```
+
+**Delete a reminder:**
+```bash
+python calendar_tool.py delete-reminder --reminder-id <UID>
+```
+
+Reminder UIDs are returned by `get-reminders` and `create-reminder`.
+
+> **Note:** Basic CRUD works reliably. Location-based reminders, subtasks, and attachments are not supported via CalDAV.
+
 ## Output
 
 All commands output JSON, making it easy to pipe into other tools or use from AI agents.
