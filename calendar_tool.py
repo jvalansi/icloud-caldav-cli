@@ -323,15 +323,20 @@ def cmd_create_reminder(args):
             target_list = all_lists[0][1]
 
     cal_obj = Calendar()
-    cal_obj.add("prodid", "-//icloud-caldav-cli//EN")
+    cal_obj.add("prodid", "-//Apple Inc.//Mac OS X 10.14.4//EN")
     cal_obj.add("version", "2.0")
+    cal_obj.add("calscale", "GREGORIAN")
 
     todo = ICalTodo()
     todo_uid = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
     todo.add("uid", todo_uid)
     todo.add("summary", args.title)
     todo.add("status", "NEEDS-ACTION")
-    todo.add("dtstamp", datetime.now(timezone.utc))
+    todo.add("dtstamp", now)
+    todo.add("created", now)
+    todo.add("last-modified", now)
+    todo.add("sequence", 0)
     if args.due:
         todo.add("due", _parse_dt(args.due))
     if args.notes:
@@ -346,14 +351,24 @@ def cmd_create_reminder(args):
 
 
 def _find_todo(principal, uid, list_filter=None):
-    """Search all reminder lists for a VTODO with the given UID."""
+    """Search all reminder lists for a VTODO with the given UID.
+
+    iCloud rejects UID-filtered REPORTs with 412 Precondition Failed, so
+    enumerate each list and match the UID client-side.
+    """
     for _name, cal in _get_reminder_lists(principal, list_filter):
         try:
-            todos = cal.search(uid=uid, todo=True)
+            todos = cal.todos(include_completed=True)
         except Exception:
             continue
         for todo in todos:
-            return todo
+            try:
+                cal_obj = Calendar.from_ical(todo.data)
+            except Exception:
+                continue
+            for component in cal_obj.walk():
+                if component.name == "VTODO" and str(component.get("uid")) == uid:
+                    return todo
     return None
 
 
